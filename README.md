@@ -11,7 +11,7 @@ Additionally includes an **RVC (Retrieval-Based Voice Conversion)** node for voi
 | Node | Type | Description |
 |------|------|-------------|
 | **Supertonic Model Loader** 🎤 | Loader | Initialises the Supertonic-3 TTS engine (auto-downloads ~400MB model from Hugging Face on first run) |
-| **Supertonic Text-to-Speech** 🗣️ | Generate | Synthesises speech from text with 31 languages, 10 preset voices, and inline expression tags |
+| **Supertonic Text-to-Speech** 🗣️ | Generate | Synthesises speech from text with 31 languages and 10 preset voices |
 | **RVC Voice Converter** 🔊 | Convert | Attempts voice conversion via RVC .pth checkpoints — **currently non-functional** |
 
 ---
@@ -22,9 +22,6 @@ Additionally includes an **RVC (Retrieval-Based Voice Conversion)** node for voi
 
 - **31 languages** — `en`, `ko`, `ja`, `id`, `ar`, `de`, `es`, `fr`, `hi`, `vi`, and more
 - **10 built-in voices** — M1–M5 (male), F1–F5 (female)
-- **Expression tags** — Place inline tags directly in your text:
-  - `<laugh>`, `<breath>`, `<sigh>`, `<crying>`, `<whisper>`
-  - `<shout>`, `<yawn>`, `<cough>`, `<clearthroat>`, `<mumble>`
 - **Voice Builder JSON support** — Load custom voice profiles generated from [Supertone's Voice Builder](https://supertone-inc.github.io/supertonic-py/)
 - **Custom style path** — Pass an external `.json` file path for zero-shot custom voices
 - **Pitch shift** — Optional post-synthesis pitch shifting via torchaudio phase vocoder
@@ -38,6 +35,28 @@ Additionally includes an **RVC (Retrieval-Based Voice Conversion)** node for voi
 ```
 Text → [SupertonicTTS] → AUDIO (44.1kHz float32)
 ```
+
+---
+
+## 🎭 Expression Tags — NOT SUPPORTED in Local SDK
+
+The Supertonic-3 **documentation** advertises 10 expression tags (`<laugh>`, `<breath>`, `<sigh>`, etc.), but these tags **only work on the Supertone Cloud API / HTTP server endpoint** — **not** in the open-weight Python SDK running locally.
+
+### Why they don't work
+
+The `supertonic` Python package's text preprocessor (`core.py` → `_preprocess_text`) performs text normalization that strips or ignores angle-bracket tags. The tags are passed through as literal text (e.g., the word `<laugh>` is spoken as-is), not interpreted as vocal expressions.
+
+| Tag | Expected | Actual (local SDK) |
+|-----|----------|-------------------|
+| `<laugh>` | Laughter effect | Spoken as "laugh" |
+| `<whisper>` | Whispered speech | Spoken as "whisper" |
+| `<sigh>` | Sigh effect | Spoken as "sigh" |
+
+### Where they DO work
+
+- ✅ **Supertone Cloud API** — managed endpoint at [api.supertone.ai](https://supertone-inc.github.io/supertonic-py/)
+- ✅ **Supertone HTTP server** — `supertonic serve` mode (see [docs](https://supertone-inc.github.io/supertonic-py/))
+- ❌ **Local Python SDK (TTS class)** — text preprocessor strips the tags
 
 ---
 
@@ -105,12 +124,6 @@ git clone https://github.com/Anonymzx/ComfyUI-Supertonic3TTS.git
 pip install -r ComfyUI-Supertonic3TTS/requirements.txt
 ```
 
-If you get dependency conflicts with `infer-rvc-python`, install it with `--no-deps`:
-
-```bash
-pip install infer-rvc-python soundfile ffmpeg-python --no-deps
-```
-
 ### 3. Restart ComfyUI
 
 The nodes will appear under **`Audio/Supertonic`** in the node menu.
@@ -132,9 +145,6 @@ The nodes will appear under **`Audio/Supertonic`** in the node menu.
 
 ```
 Text → [SupertonicTTS] → AUDIO → [RVC Voice Converter] → ❌ (broken)
-
-Planned:
-Text → [SupertonicTTS] → AUDIO → [RVC Voice Converter] → Final AUDIO
 ```
 
 ---
@@ -154,30 +164,6 @@ Text → [SupertonicTTS] → AUDIO → [RVC Voice Converter] → Final AUDIO
 | `ru` | Russian | `sk` | Slovak | `sl` | Slovenian |
 | `sv` | Swedish | `tr` | Turkish | `uk` | Ukrainian |
 | `vi` | Vietnamese | `na` | Unknown / fallback | |
-
----
-
-## 🎭 Expression Tags
-
-Place these directly in your text:
-
-| Tag | Effect |
-|-----|--------|
-| `<laugh>` | Laughter effect |
-| `<breath>` | Breath intake |
-| `<sigh>` | Sigh |
-| `<crying>` | Crying voice |
-| `<whisper>` | Whispered speech |
-| `<shout>` | Raised voice |
-| `<yawn>` | Yawning |
-| `<cough>` | Cough |
-| `<clearthroat>` | Clearing throat |
-| `<mumble>` | Mumbling |
-
-Example:
-```
-<laugh> That's hilarious! <sigh> But I'm exhausted.
-```
 
 ---
 
