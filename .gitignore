@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Models (large files, downloaded separately)
+models/hub/
+models/rvc/
+models/xet/
+
+# Checkpoints
+lib/mixer.ckpt
+
+# Audio files
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.opus
+*.m4a
+
+# Logs
+logs/
+*.log
