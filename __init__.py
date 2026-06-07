@@ -8,7 +8,7 @@ Nodes:
   - SupertonicLoader: Load TTS engine with voice style
   - SupertonicTTS:    Synthesize speech from text
 
-Category: Audio/Supertonic
+Category: Supertonic 3
 """
 
 from .supertonic_nodes import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS

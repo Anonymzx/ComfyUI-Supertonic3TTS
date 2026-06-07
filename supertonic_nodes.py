@@ -167,7 +167,7 @@ def get_tts(auto_download: bool = True) -> TTS:
 
 
 class SupertonicLoader:
-    CATEGORY = "Audio/Supertonic"
+    CATEGORY = "Supertonic 3"
     RETURN_TYPES = ("SUPERTONIC_MODEL",)
     RETURN_NAMES = ("model",)
     FUNCTION = "load"
@@ -184,7 +184,7 @@ class SupertonicLoader:
 
 
 class SupertonicTTS:
-    CATEGORY = "Audio/Supertonic"
+    CATEGORY = "Supertonic 3"
     RETURN_TYPES = ("AUDIO",)
     RETURN_NAMES = ("audio",)
     FUNCTION = "synthesize"
