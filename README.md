@@ -9,7 +9,7 @@ A suite of [ComfyUI](https://github.com/comfyanonymous/ComfyUI) custom nodes int
 | Node | Type | Description |
 |------|------|-------------|
 | **Supertonic Model Loader** 🎤 | Loader | Initialises the Supertonic-3 TTS engine (auto-downloads ~400MB model from Hugging Face on first run) |
-| **Supertonic Text-to-Speech** 🗣️ | Generate | Synthesises speech from text with 31 languages and 10 preset voices |
+| **Supertonic Text-to-Speech** 🗣️ | Generate | Synthesises speech from text with 31 languages, 10 preset voices, expression tags, and post-processing effects |
 
 ---
 
@@ -21,11 +21,22 @@ A suite of [ComfyUI](https://github.com/comfyanonymous/ComfyUI) custom nodes int
 - **10 built-in voices** — M1–M5 (male), F1–F5 (female)
 - **Voice Builder JSON support** — Load custom voice profiles generated from [Supertone's Voice Builder](https://supertone-inc.github.io/supertonic-py/)
 - **Custom style path** — Pass an external `.json` file path for zero-shot custom voices
-- **Pitch shift** — Optional post-synthesis pitch shifting via torchaudio phase vocoder
-- **Speed control** — Native SDK speed parameter (0.7x – 2.0x)
+- **Expression tags** — Type tags like `<laugh>` or `<sigh>` directly into text for vocal expressions
+- **Speed control** — Native SDK speed parameter (0.5x – 2.0x)
 - **Quality control** — Denoising steps (5 – 12, higher = better quality)
 - **CPU-friendly** — Runs entirely on CPU via ONNX Runtime, no GPU required
 - **Local model cache** — HF models stored in `models/` inside this node's directory (not `~/.cache/`)
+
+### Post-Processing Effects (via librosa)
+
+| Effect | Description |
+|--------|-------------|
+| **Trim Silence** ✂️ | Auto-removes leading/trailing silence (default: ON) |
+| **Normalize Volume** 🔊 | Normalises peak amplitude (default: ON) |
+| **Clarity Boost** 🎙️ | Preemphasis filter for clearer high frequencies |
+| **Pitch Shift** 🎵 | Shift pitch by ±12 semitones |
+| **Time Stretch** ⏱️ | Speed up or slow down without pitch change (0.5x – 2.0x) |
+| **Chorus Effect** 🤖 | Sci-fi chorus with delayed pitch-shifted mix |
 
 ### Pipeline
 
@@ -35,25 +46,29 @@ Text → [SupertonicTTS] → AUDIO (44.1kHz float32)
 
 ---
 
-## 🎭 Expression Tags — NOT SUPPORTED in Local SDK
+## 🎭 Expression Tags
 
-The Supertonic-3 **documentation** advertises 10 expression tags (`<laugh>`, `<breath>`, `<sigh>`, etc.), but these tags **only work on the Supertone Cloud API / HTTP server endpoint** — **not** in the open-weight Python SDK running locally.
+Type any of the following tags directly into your text to add vocal expressions:
 
-### Why they don't work
+| Tag | Effect |
+|-----|--------|
+| `<laugh>` | Laughter |
+| `<breath>` | Breath intake |
+| `<surprise>` | Surprise tone |
+| `<sigh>` | Sigh |
+| `<scream>` | Scream / shout |
+| `<throatclear>` | Throat clear |
+| `<sad>` | Sad tone |
+| `<angry>` | Angry tone |
+| `<cough>` | Cough |
+| `<yawn>` | Yawn |
 
-The `supertonic` Python package's text preprocessor (`core.py` → `_preprocess_text`) performs text normalization that strips or ignores angle-bracket tags. The tags are passed through as literal text (e.g., the word `<laugh>` is spoken as-is), not interpreted as vocal expressions.
+**Example:**
+```
+Halo! <laugh> Senang bertemu denganmu! <sigh> Tapi aku lelah.
+```
 
-| Tag | Expected | Actual (local SDK) |
-|-----|----------|-------------------|
-| `<laugh>` | Laughter effect | Spoken as "laugh" |
-| `<whisper>` | Whispered speech | Spoken as "whisper" |
-| `<sigh>` | Sigh effect | Spoken as "sigh" |
-
-### Where they DO work
-
-- ✅ **Supertone Cloud API** — managed endpoint at [api.supertone.ai](https://supertone-inc.github.io/supertonic-py/)
-- ✅ **Supertone HTTP server** — `supertonic serve` mode (see [docs](https://supertone-inc.github.io/supertonic-py/))
-- ❌ **Local Python SDK (TTS class)** — text preprocessor strips the tags
+The tags are passed to the Supertonic SDK which interprets them during synthesis.
 
 ---
 
@@ -83,7 +98,7 @@ git clone https://github.com/Anonymzx/ComfyUI-Supertonic3TTS.git
 pip install -r ComfyUI-Supertonic3TTS/requirements.txt
 ```
 
-> **Note:** `torch` and `torchaudio` are **not** listed in requirements.txt — they are inherited from ComfyUI itself. Only `supertonic`, `numpy`, and `soundfile` are required on top of ComfyUI's base dependencies.
+> **Note:** `torch` and `torchaudio` are **not** listed in requirements.txt — they are inherited from ComfyUI itself. Only `supertonic`, `numpy`, `soundfile`, and `librosa` are required on top of ComfyUI's base dependencies.
 
 ### 3. Restart ComfyUI
 
@@ -98,9 +113,10 @@ The nodes will appear under **`Audio/Supertonic`** in the node menu.
 1. Add **Supertonic Model Loader** (no inputs needed)
 2. Add **Supertonic Text-to-Speech**
 3. Connect the model from step 1
-4. Type your text, select language, voice, speed, and quality
-5. Add **Preview Audio** or **Save Audio** to hear the result
-6. Run the workflow
+4. Type your text (include expression tags like `<laugh>` if desired)
+5. Configure: language, voice, speed, quality, and post-processing options
+6. Add **Preview Audio** or **Save Audio** to hear the result
+7. Run the workflow
 
 ---
 
