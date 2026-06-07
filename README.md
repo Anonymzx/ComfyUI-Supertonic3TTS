@@ -2,8 +2,6 @@
 
 A suite of [ComfyUI](https://github.com/comfyanonymous/ComfyUI) custom nodes integrating **Supertone's Supertonic-3** — a lightning-fast, on-device, multilingual Text-to-Speech system running natively via ONNX Runtime.
 
-Additionally includes an **RVC (Retrieval-Based Voice Conversion)** node for voice cloning/changing, though this is currently **non-functional** (see status below).
-
 ---
 
 ## 📦 Nodes
@@ -12,11 +10,10 @@ Additionally includes an **RVC (Retrieval-Based Voice Conversion)** node for voi
 |------|------|-------------|
 | **Supertonic Model Loader** 🎤 | Loader | Initialises the Supertonic-3 TTS engine (auto-downloads ~400MB model from Hugging Face on first run) |
 | **Supertonic Text-to-Speech** 🗣️ | Generate | Synthesises speech from text with 31 languages and 10 preset voices |
-| **RVC Voice Converter** 🔊 | Convert | Attempts voice conversion via RVC .pth checkpoints — **currently non-functional** |
 
 ---
 
-## ✨ Features (Working)
+## ✨ Features
 
 ### Supertonic TTS
 
@@ -60,44 +57,6 @@ The `supertonic` Python package's text preprocessor (`core.py` → `_preprocess_
 
 ---
 
-## ❌ RVC Voice Converter — NOT WORKING
-
-The **RVC Voice Converter** node is currently **non-functional**. It attempts to load an RVC .pth checkpoint and run voice conversion, but the output is pure static/buzzing or silence.
-
-### Root Cause
-
-The RVC pipeline requires:
-- A **HuBERT** content encoder (for feature extraction)
-- An **NSF-HiFiGAN** vocoder/generator (for waveform synthesis)
-- Proper **feature dimension alignment** between HuBERT output and the generator input
-
-While the `SynthesizerTrnMs768NSFsid` generator loads successfully from the checkpoint, the feature extraction pipeline produces incorrect tensor shapes or NaN values, resulting in unusable audio output.
-
-### Known Issues
-
-- `mat1 and mat2 shapes cannot be multiplied (768xT and 768xT)` — feature dimension mismatch between HuBERT embeddings and generator expectations
-- Pure static/buzzing output — NaN explosion from FP16→CPU conversion or unnormalised intermediate tensors
-- HuBERT model loading is fragile — depends on local files or transformers library, with inconsistent fallback behaviour
-- WORLD vocoder fallback produces low-quality whispered output
-
-### Status
-
-| Component | Status |
-|-----------|--------|
-| RVC checkpoint loading | ✅ Works |
-| SynthesizerTrn instantiation | ✅ Works |
-| HuBERT model loading | ⚠️ Fragile |
-| Feature extraction (HuBERT) | ❌ Shape errors |
-| net_g.infer forward pass | ❌ Matrix dimension mismatch |
-| Index file (.faiss) retrieval | ❌ Untested |
-| Audio output | ❌ Static / buzzing |
-
-### Recommendation
-
-For RVC voice cloning, consider using a dedicated RVC application (e.g., [webui](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI)) separately, then load the resulting audio into ComfyUI for further processing.
-
----
-
 ## 🚀 Installation
 
 ### Requirements
@@ -124,6 +83,8 @@ git clone https://github.com/Anonymzx/ComfyUI-Supertonic3TTS.git
 pip install -r ComfyUI-Supertonic3TTS/requirements.txt
 ```
 
+> **Note:** `torch` and `torchaudio` are **not** listed in requirements.txt — they are inherited from ComfyUI itself. Only `supertonic`, `numpy`, and `soundfile` are required on top of ComfyUI's base dependencies.
+
 ### 3. Restart ComfyUI
 
 The nodes will appear under **`Audio/Supertonic`** in the node menu.
@@ -140,12 +101,6 @@ The nodes will appear under **`Audio/Supertonic`** in the node menu.
 4. Type your text, select language, voice, speed, and quality
 5. Add **Preview Audio** or **Save Audio** to hear the result
 6. Run the workflow
-
-### "Golden Combo" Pipeline (RVC is broken)
-
-```
-Text → [SupertonicTTS] → AUDIO → [RVC Voice Converter] → ❌ (broken)
-```
 
 ---
 
@@ -172,31 +127,14 @@ Text → [SupertonicTTS] → AUDIO → [RVC Voice Converter] → ❌ (broken)
 ```
 ComfyUI-Supertonic3TTS/
 ├── __init__.py              # Node registration
-├── supertonic_nodes.py      # All node logic + RVC engine
-├── rvc_model.py             # RVC model loader (stub)
-├── hubert_models.py         # HuBERT model loader
+├── supertonic_nodes.py      # All node logic
 ├── requirements.txt         # Python dependencies
 ├── README.md                # This file
-├── models/                  # HF model cache (auto-created)
-│   ├── hub/                 # Hugging Face Hub cache
-│   └── rvc/                 # RVC model directory
-├── styles/                  # Voice Builder JSON directory
-└── lib/                     # RVC inference library
-    ├── infer_pack/          # NSF-HiFiGAN SynthesizerTrn
-    ├── rmvpe.py             # RMVPE pitch extractor
-    └── ...
+├── LICENSE                  # MIT License
+├── .gitignore
+└── models/                  # HF model cache (auto-created)
+    └── hub/                 # Hugging Face Hub cache
 ```
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome, especially for fixing the RVC pipeline! Areas that need work:
-
-- HuBERT feature extraction → generator shape alignment
-- FP16/CPU NaN handling in intermediate tensors
-- Proper index (.faiss) retrieval integration
-- RMVPE pitch extraction integration
 
 ---
 

@@ -5,8 +5,8 @@ A suite of ComfyUI custom nodes integrating Supertonic's lightning-fast,
 on-device, multilingual Text-to-Speech system.
 
 Nodes:
-  - SupertonicLoader:  Load TTS engine with voice style
-  - SupertonicTTS:     Synthesize speech from text
+  - SupertonicLoader: Load TTS engine with voice style
+  - SupertonicTTS:    Synthesize speech from text
 
 Category: Audio/Supertonic
 """
