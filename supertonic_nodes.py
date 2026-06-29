@@ -8,22 +8,11 @@ Expression Tags (type directly into text):
 """
 
 import os
-import re
 from pathlib import Path
 from typing import Optional
 
 import numpy as np
 import torch
-import torchaudio
-
-
-def get_device() -> torch.device:
-    if torch.version.hip:
-        return torch.device("hip")
-    return torch.device("cpu")
-
-
-DEVICE = get_device()
 
 try:
     from supertonic import TTS
@@ -66,20 +55,6 @@ def numpy_to_comfy_audio(wav: np.ndarray, sr: int) -> dict:
     return {"waveform": tensor, "sample_rate": sr}
 
 
-def comfy_audio_to_numpy(audio: dict) -> tuple:
-    wav = audio["waveform"]
-    sr = audio["sample_rate"]
-    if isinstance(wav, torch.Tensor):
-        wav = wav.cpu().numpy()
-    while wav.ndim > 1:
-        wav = wav.squeeze(0)
-    wav = wav.astype(np.float32)
-    peak = np.max(np.abs(wav))
-    if peak > 1.0:
-        wav = wav / 32768.0
-    return wav, sr
-
-
 def normalize_audio(wav: np.ndarray, peak_target: float = 0.95) -> np.ndarray:
     wav = np.ascontiguousarray(wav).astype(np.float32)
     peak = np.max(np.abs(wav))
@@ -100,6 +75,7 @@ def apply_postprocessing(
     pitch_semitones: float,
     time_stretch: float,
     chorus_effect: bool,
+    verbose: bool = False,
 ) -> np.ndarray:
     """Apply librosa post-processing to the audio waveform (matching WebUI behavior)."""
     try:
@@ -134,8 +110,8 @@ def apply_postprocessing(
     if chorus_effect:
         wav_ps = librosa.effects.pitch_shift(y=wav_np, sr=sr, n_steps=-2)
         wav_delayed = np.pad(wav_ps, (int(sr * 0.03), 0), mode="constant")
-        min_len = min(len(wav_np), len(wav_delayed))
-        wav_np = (wav_np[:min_len] * 0.7) + (wav_delayed[:min_len] * 0.5)
+        wav_delayed = wav_delayed[:len(wav_np)]
+        wav_np = (wav_np * 0.7) + (wav_delayed * 0.5)
         effects_applied.append("chorus")
 
     # Normalize volume
@@ -143,7 +119,7 @@ def apply_postprocessing(
         wav_np = librosa.util.normalize(wav_np)
         effects_applied.append("normalize")
 
-    if effects_applied:
+    if effects_applied and verbose:
         print(f"  Post-processing: {', '.join(effects_applied)}")
 
     return wav_np
@@ -157,9 +133,6 @@ def get_tts(auto_download: bool = True) -> TTS:
     if _TTS_INSTANCE is None:
         if TTS is None:
             raise ImportError("supertonic package not found. Install: pip install supertonic")
-        ensure_models_dir()
-        os.environ["HF_HOME"] = str(_MODELS_DIR)
-        os.environ["HUGGINGFACE_HUB_CACHE"] = str(_MODELS_DIR / "hub")
         print("[Supertonic] Initialising TTS engine ...")
         _TTS_INSTANCE = TTS(auto_download=auto_download)
         print(f"[Supertonic] Ready — {_TTS_INSTANCE.sample_rate} Hz")
@@ -212,6 +185,7 @@ class SupertonicTTS:
                 "pitch_semitones": ("FLOAT", {"default": 0.0, "min": -12.0, "max": 12.0, "step": 1.0, "display": "slider"}),
                 "time_stretch": ("FLOAT", {"default": 1.0, "min": 0.5, "max": 2.0, "step": 0.05, "display": "slider"}),
                 "chorus_effect": ("BOOLEAN", {"default": False}),
+                "verbose": ("BOOLEAN", {"default": False}),
             },
         }
 
@@ -230,9 +204,11 @@ class SupertonicTTS:
         pitch_semitones: float = 0.0,
         time_stretch: float = 1.0,
         chorus_effect: bool = False,
+        verbose: bool = False,
     ) -> tuple:
         if not text or not text.strip():
-            print("[SupertonicTTS] Empty text — returning silence")
+            if verbose:
+                print("[SupertonicTTS] Empty text — returning silence")
             return self._silence(model["sample_rate"])
 
         tts_obj = model["tts"]
@@ -240,27 +216,27 @@ class SupertonicTTS:
 
         # Detect expression tags in text
         found_tags = [tag for tag in EXPRESSION_TAGS if tag in text]
-        if found_tags:
-            print(f"  Expression tags detected: {', '.join(found_tags)}")
 
         if custom_style_path and os.path.isfile(custom_style_path):
             style = tts_obj.get_voice_style_from_path(custom_style_path)
         else:
             style = tts_obj.get_voice_style(voice_style)
 
-        print(f"\n=== SupertonicTTS ===")
-        print(f"  Language: {language} | Speed: {speed} | Quality: {quality} | Voice: {voice_style}")
-        if found_tags:
-            print(f"  Tags: {', '.join(found_tags)}")
-        print(f"  Text: {text[:120]}")
+        if verbose:
+            print(f"\n=== SupertonicTTS ===")
+            print(f"  Language: {language} | Speed: {speed} | Quality: {quality} | Voice: {voice_style}")
+            if found_tags:
+                print(f"  Expression tags detected: {', '.join(found_tags)}")
+            print(f"  Text: {text[:120]}")
 
         try:
             wav_np, duration = tts_obj.synthesize(
                 text=text, voice_style=style, lang=language,
-                speed=speed, total_steps=quality, verbose=True,
+                speed=speed, total_steps=quality, verbose=verbose,
             )
             dur_sec = float(duration[0]) if hasattr(duration, "__len__") else float(duration)
-            print(f"  Generated {dur_sec:.2f}s ({wav_np.shape[-1]} samples @ {sr} Hz)")
+            if verbose:
+                print(f"  Generated {dur_sec:.2f}s ({wav_np.shape[-1]} samples @ {sr} Hz)")
 
             # Convert to 1D numpy for librosa processing
             if isinstance(wav_np, list):
@@ -277,6 +253,7 @@ class SupertonicTTS:
                 pitch_semitones=pitch_semitones,
                 time_stretch=time_stretch,
                 chorus_effect=chorus_effect,
+                verbose=verbose,
             )
 
             # Ensure 2D shape for ComfyUI [1, samples]
@@ -286,9 +263,10 @@ class SupertonicTTS:
             return (numpy_to_comfy_audio(wav_np.astype(np.float32), sr),)
 
         except Exception as e:
-            import traceback
-            print(f"[SupertonicTTS] ERROR — {e}")
-            traceback.print_exc()
+            if verbose:
+                import traceback
+                print(f"[SupertonicTTS] ERROR — {e}")
+                traceback.print_exc()
             return self._silence(sr)
 
     @staticmethod
