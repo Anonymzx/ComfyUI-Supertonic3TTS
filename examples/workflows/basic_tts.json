@@ -1,0 +1,68 @@
+{
+  "last_node_id": 5,
+  "last_link_id": 4,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "SupertonicLoader",
+      "pos": [80, 240],
+      "size": [240, 80],
+      "properties": {},
+      "widgets_values": []
+    },
+    {
+      "id": 2,
+      "type": "SupertonicTTS",
+      "pos": [400, 240],
+      "size": [320, 220],
+      "properties": {},
+      "widgets_values": [
+        "Hello! <laugh> This is Supertonic-3 speaking.",
+        "en",
+        1.0,
+        8,
+        "M1"
+      ]
+    },
+    {
+      "id": 3,
+      "type": "SupertonicEffects",
+      "pos": [800, 240],
+      "size": [280, 200],
+      "properties": {},
+      "widgets_values": [
+        true,
+        true,
+        false,
+        0,
+        1.0,
+        false
+      ]
+    },
+    {
+      "id": 4,
+      "type": "SaveAudio",
+      "pos": [1160, 240],
+      "size": [240, 80],
+      "properties": {},
+      "widgets_values": [
+        "supertonic-output",
+        "wav"
+      ]
+    }
+  ],
+  "links": [
+    [1, 1, 0, 2, 0, "SUPERTONIC_MODEL"],
+    [2, 2, 0, 3, 0, "AUDIO"],
+    [3, 3, 0, 4, 0, "AUDIO"]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "workflow_info": {
+      "name": "Supertonic Basic TTS",
+      "description": "Minimal Loader → TTS → Effects → SaveAudio pipeline. Edit text or set TTS custom_style_path for a custom voice."
+    }
+  },
+  "version": 0.4
+}

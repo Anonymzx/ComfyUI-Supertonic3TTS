@@ -12,10 +12,11 @@ A suite of [ComfyUI](https://github.com/comfyanonymous/ComfyUI) custom nodes int
 
 ## 📦 Nodes
 
-| Node | Type | Description |
-|------|------|-------------|
-| **Supertonic Model Loader** 🎤 | Loader | Initialises the Supertonic-3 TTS engine (auto-downloads ~400MB model from Hugging Face on first run) |
-| **Supertonic Text-to-Speech** 🗣️ | Generate | Synthesises speech from text with 31 languages, 10 preset voices, expression tags, and post-processing effects |
+| Node | Input | Output | Description |
+|------|-------|--------|-------------|
+| **Supertonic Model Loader** 🎤 | — | `SUPERTONIC_MODEL` | Initialises the TTS engine. Auto-downloads ~400MB model on first run, stored locally in `models/`. |
+| **Supertonic Text-to-Speech** 🗣️ | `model`, text, lang, voice, speed, steps | `AUDIO` | Synthesises speech from text. 31 languages, 10 preset voices, expression tags, custom style `.json` via `custom_style_path`. |
+| **Supertonic Effects** ✨ | `audio` | `AUDIO` | Optional post-processing (trim, normalize, pitch, stretch, chorus). Apply to any `AUDIO` source. |
 
 ---
 
@@ -25,29 +26,27 @@ A suite of [ComfyUI](https://github.com/comfyanonymous/ComfyUI) custom nodes int
 
 - **31 languages** — `en`, `ko`, `ja`, `id`, `ar`, `de`, `es`, `fr`, `hi`, `vi`, and more
 - **10 built-in voices** — M1–M5 (male), F1–F5 (female)
-- **Voice Builder JSON support** — Load custom voice profiles generated from [Supertone's Voice Builder](https://supertone-inc.github.io/supertonic-py/)
-- **Custom style path** — Pass an external `.json` file path for zero-shot custom voices
+- **Custom voice styles** — Pass an absolute path to a Supertonic `.json` voice profile in the `custom_style_path` field (e.g. from [Supertone's Voice Builder](https://supertone-inc.github.io/supertonic-py/))
 - **Expression tags** — Type tags like `<laugh>` or `<sigh>` directly into text for vocal expressions
-- **Speed control** — Native SDK speed parameter (0.5x – 2.0x)
-- **Quality control** — Denoising steps (5 – 12, higher = better quality)
+- **Speed control** — Native SDK speed parameter (0.5x – 2.0x). For finer post-synthesis tempo tweaks, use the SupertonicEffects `time_stretch` slider.
+- **Steps** — Diffusion steps (5–12, default 8). Higher = smoother, slower.
 - **CPU-friendly** — Runs entirely on CPU via ONNX Runtime, no GPU required
-- **Local model cache** — HF models stored in `models/` inside this node's directory (not `~/.cache/`)
-
-### Post-Processing Effects (via librosa)
-
-| Effect | Description |
-|--------|-------------|
-| **Trim Silence** ✂️ | Auto-removes leading/trailing silence (default: ON) |
-| **Normalize Volume** 🔊 | Normalises peak amplitude (default: ON) |
-| **Clarity Boost** 🎙️ | Preemphasis filter for clearer high frequencies |
-| **Pitch Shift** 🎵 | Shift pitch by ±12 semitones |
-| **Time Stretch** ⏱️ | Speed up or slow down without pitch change (0.5x – 2.0x) |
-| **Chorus Effect** 🤖 | Sci-fi chorus with delayed pitch-shifted mix |
+- **Local model cache** — Model files stored in `models/supertonic-3/` inside this node's directory (not `~/.cache/`)
 
 ### Pipeline
 
 ```
-Text → [SupertonicTTS] → AUDIO (44.1kHz float32)
+┌──────────────┐    ┌────────────────────────────┐    ┌──────────────┐
+│   text +     │ →  │     SupertonicTTS          │ →  │   AUDIO      │
+│  language    │    │ (lang, voice, speed, steps)│    │              │
+└──────────────┘    └─────────────┬──────────────┘    └──────┬───────┘
+                                  │                            │
+                                  │       ┌──────────────┐     │
+                                  └─────→ │ SupertonicEffects│ ←─┘
+                                          │ (trim/pitch/etc)│
+                                          └──────┬────────┘
+                                                 ▼
+                                          Preview / Save Audio
 ```
 
 ---
@@ -97,10 +96,6 @@ git clone https://github.com/Anonymzx/ComfyUI-Supertonic3TTS.git
 **Activate your ComfyUI virtual environment first**, then:
 
 ```bash
-# Windows (typical ComfyUI venv)
-# cd ComfyUI
-# .venv\Scripts\activate
-
 pip install -r ComfyUI-Supertonic3TTS/requirements.txt
 ```
 
@@ -108,7 +103,9 @@ pip install -r ComfyUI-Supertonic3TTS/requirements.txt
 
 ### 3. Restart ComfyUI
 
-The nodes will appear under **`Audio/Supertonic`** in the node menu.
+The nodes will appear under **`audio/Supertonic`** in the node menu.
+
+> **First run only** — the Loader auto-downloads the ~400MB Supertonic-3 model into `models/supertonic-3/`. A clean 0–100% slider shows progress in the console. Subsequent loads skip the download.
 
 ---
 
@@ -120,9 +117,23 @@ The nodes will appear under **`Audio/Supertonic`** in the node menu.
 2. Add **Supertonic Text-to-Speech**
 3. Connect the model from step 1
 4. Type your text (include expression tags like `<laugh>` if desired)
-5. Configure: language, voice, speed, quality, and post-processing options
+5. Configure: language, voice, speed, steps
 6. Add **Preview Audio** or **Save Audio** to hear the result
 7. Run the workflow
+
+### Add post-processing
+
+Wire the TTS `AUDIO` output into **Supertonic Effects**, then into Preview/Save. Adjust pitch / stretch / chorus as needed.
+
+### Use a custom voice style
+
+Set the optional `custom_style_path` field on the **Supertonic Text-to-Speech** node to an absolute path of a Supertonic voice style `.json` (e.g. generated from [Supertone's Voice Builder](https://supertone-inc.github.io/supertonic-py/)). When set, it overrides the preset `voice_style` dropdown.
+
+### Speed vs Time Stretch
+
+- **SupertonicTTS `speed`** changes tempo *during* synthesis (model-aware, cleanest).
+- **SupertonicEffects `time_stretch`** uses phase vocoder after synthesis (any source, slight artifacts at extremes).
+- Combine both: SDK `speed` first, then Effects `time_stretch` on the output. Effective tempo ≈ `speed × time_stretch`.
 
 ---
 
@@ -148,14 +159,17 @@ The nodes will appear under **`Audio/Supertonic`** in the node menu.
 
 ```
 ComfyUI-Supertonic3TTS/
-├── __init__.py              # Node registration
-├── supertonic_nodes.py      # All node logic
+├── __init__.py              # Node registration (combines 2 modules)
+├── supertonic_nodes.py      # Loader + TTS nodes
+├── supertonic_effects.py    # Effects node (AUDIO → AUDIO)
+├── supertonic_utils.py      # Shared audio helpers
 ├── requirements.txt         # Python dependencies
 ├── README.md                # This file
+├── CHANGELOG.md             # Release history
 ├── LICENSE                  # MIT License
-├── .gitignore
-└── models/                  # HF model cache (auto-created)
-    └── hub/                 # Hugging Face Hub cache
+├── tests/                   # Unit tests (pytest / unittest)
+└── models/                  # Auto-populated on first run
+    └── supertonic-3/        #   ~385MB model (NOT ~/.cache)
 ```
 
 ---

@@ -3,6 +3,7 @@ name = "comfyui-supertonic3tts"
 description = "ComfyUI custom nodes integrating Supertonic-3 — a lightning-fast, on-device, multilingual Text-to-Speech system running natively via ONNX Runtime. 31 languages, 10 preset voices, expression tags, and post-processing effects."
 version = "1.0.0"
 license = { file = "LICENSE" }
+authors = [{ name = "Anonymzx" }]
 dependencies = [
     "supertonic>=1.3.0",
     "numpy>=1.24.0",

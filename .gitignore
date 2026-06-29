@@ -28,6 +28,8 @@ ENV/
 models/hub/
 models/rvc/
 models/xet/
+models/supertonic-3/
+models/.supertonic-3.tmp/
 
 # Checkpoints
 lib/mixer.ckpt
