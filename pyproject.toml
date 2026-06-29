@@ -17,4 +17,4 @@ Repository = "https://github.com/Anonymzx/ComfyUI-Supertonic3TTS"
 [tool.comfy]
 PublisherId = "anonymzx"
 DisplayName = "ComfyUI-Supertonic3TTS"
-Icon = ""
+Icon = "https://i.ibb.co.com/v6n1h5tc/LOGO-BULAT-FIX.png"
