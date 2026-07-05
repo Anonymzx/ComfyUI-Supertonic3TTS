@@ -155,25 +155,6 @@ Set the optional `custom_style_path` field on the **Supertonic Text-to-Speech** 
 
 ---
 
-## 📁 File Structure
-
-```
-ComfyUI-Supertonic3TTS/
-├── __init__.py              # Node registration (combines 2 modules)
-├── supertonic_nodes.py      # Loader + TTS nodes
-├── supertonic_effects.py    # Effects node (AUDIO → AUDIO)
-├── supertonic_utils.py      # Shared audio helpers
-├── requirements.txt         # Python dependencies
-├── README.md                # This file
-├── CHANGELOG.md             # Release history
-├── LICENSE                  # MIT License
-├── tests/                   # Unit tests (pytest / unittest)
-└── models/                  # Auto-populated on first run
-    └── supertonic-3/        #   ~385MB model (NOT ~/.cache)
-```
-
----
-
 ## 📄 License
 
 Code: MIT License
