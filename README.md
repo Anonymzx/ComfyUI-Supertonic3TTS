@@ -99,6 +99,9 @@ git clone https://github.com/Anonymzx/ComfyUI-Supertonic3TTS.git
 pip install -r ComfyUI-Supertonic3TTS/requirements.txt
 ```
 
+### ComfyUI Manager is already!
+you can install it on comfyui-manager!
+
 > **Note:** `torch` and `torchaudio` are **not** listed in requirements.txt — they are inherited from ComfyUI itself. Only `supertonic`, `numpy`, `soundfile`, and `librosa` are required on top of ComfyUI's base dependencies.
 
 ### 3. Restart ComfyUI
