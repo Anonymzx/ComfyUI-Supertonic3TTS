@@ -2,11 +2,9 @@
 
 A suite of [ComfyUI](https://github.com/comfyanonymous/ComfyUI) custom nodes integrating **Supertone's Supertonic-3** — a lightning-fast, on-device, multilingual Text-to-Speech system running natively via ONNX Runtime.
 
-<div class align="center">
-    
-<img width="1081" height="607" alt="image" src="https://github.com/user-attachments/assets/9bc840c0-d108-4287-a98b-f54b63acce8c" />
+![Supertonic workflow with model loader, TTS controls, audio effects, and saved audio](docs/images/supertonic-workflow.png)
 
-</div>
+The screenshot shows the customized ComfyUI interface with `feeling` and `emotion_intensity`. These fields record a requested emotion; they do not provide native Supertonic emotion conditioning. The screenshot's Save Audio (FLAC) node is marked deprecated; use an available current audio save node for new workflows.
 
 ---
 
@@ -15,7 +13,7 @@ A suite of [ComfyUI](https://github.com/comfyanonymous/ComfyUI) custom nodes int
 | Node | Input | Output | Description |
 |------|-------|--------|-------------|
 | **Supertonic Model Loader** 🎤 | — | `SUPERTONIC_MODEL` | Initialises the TTS engine. Auto-downloads ~400MB model on first run, stored locally in `models/`. |
-| **Supertonic Text-to-Speech** 🗣️ | `model`, text, lang, voice, speed, steps | `AUDIO` | Synthesises speech from text. 31 languages, 10 preset voices, expression tags, custom style `.json` via `custom_style_path`. |
+| **Supertonic Text-to-Speech** 🗣️ | `model`, text, language, voice, speed, steps, feeling, emotion_intensity | `AUDIO` | Synthesises speech with 31 languages and 10 preset voices. Feeling and intensity are workflow metadata. |
 | **Supertonic Effects** ✨ | `audio` | `AUDIO` | Optional post-processing (trim, normalize, pitch, stretch, chorus). Apply to any `AUDIO` source. |
 
 ---
@@ -26,8 +24,7 @@ A suite of [ComfyUI](https://github.com/comfyanonymous/ComfyUI) custom nodes int
 
 - **31 languages** — `en`, `ko`, `ja`, `id`, `ar`, `de`, `es`, `fr`, `hi`, `vi`, and more
 - **10 built-in voices** — M1–M5 (male), F1–F5 (female)
-- **Custom voice styles** — Pass an absolute path to a Supertonic `.json` voice profile in the `custom_style_path` field (e.g. from [Supertone's Voice Builder](https://supertone-inc.github.io/supertonic-py/))
-- **Expression tags** — Type tags like `<laugh>` or `<sigh>` directly into text for vocal expressions
+- **Feeling and intensity parameters** — Select `feeling` and `emotion_intensity` (0.0–1.0, default 0.5) to record the requested emotion in workflow/job parameters. Supertonic currently does not apply these values to the generated audio.
 - **Speed control** — Native SDK speed parameter (0.5x – 2.0x). For finer post-synthesis tempo tweaks, use the SupertonicEffects `time_stretch` slider.
 - **Steps** — Diffusion steps (5–12, default 8). Higher = smoother, slower.
 - **CPU-friendly** — Runs entirely on CPU via ONNX Runtime, no GPU required
@@ -51,29 +48,18 @@ A suite of [ComfyUI](https://github.com/comfyanonymous/ComfyUI) custom nodes int
 
 ---
 
-## 🎭 Expression Tags
+## 🎭 Feeling and intensity
 
-Type any of the following tags directly into your text to add vocal expressions:
+The customized workflow interface uses these controls:
 
-| Tag | Effect |
-|-----|--------|
-| `<laugh>` | Laughter |
-| `<breath>` | Breath intake |
-| `<surprise>` | Surprise tone |
-| `<sigh>` | Sigh |
-| `<scream>` | Scream / shout |
-| `<throatclear>` | Throat clear |
-| `<sad>` | Sad tone |
-| `<angry>` | Angry tone |
-| `<cough>` | Cough |
-| `<yawn>` | Yawn |
+| Parameter | Values | Meaning |
+|-----------|--------|---------|
+| `feeling` | `neutral`, `happy`, `sad`, `angry`, `surprised`, `fearful`, `disgusted` | Requested emotion, stored in the workflow/job parameters. |
+| `emotion_intensity` | Minimum `0.0`, maximum `1.0`; default `0.5`; increment `0.05` | Requested intensity: none, medium, or maximum. |
 
-**Example:**
-```
-Halo! <laugh> Senang bertemu denganmu! <sigh> Tapi aku lelah.
-```
+Supertonic does not consume an emotion or emotion-intensity argument. These controls are workflow metadata and do not change the audio. Tags such as `<angry>`, `<sad>`, and `<laugh>` are not supported emotion commands in the installed SDK. Detecting a tag in a log does not establish emotion conditioning.
 
-The tags are passed to the Supertonic SDK which interprets them during synthesis.
+`voice_style`, `speed`, and the separate Effects node affect the voice or generated audio, but do not provide a native emotion-intensity control.
 
 ---
 
@@ -88,7 +74,7 @@ The tags are passed to the Supertonic SDK which interprets them during synthesis
 
 ```bash
 cd ComfyUI/custom_nodes/
-git clone https://github.com/Anonymzx/ComfyUI-Supertonic3TTS.git
+git clone https://github.com/masterzion/ComfyUI-Supertonic3TTS.git
 ```
 
 ### 2. Install Python dependencies
@@ -119,7 +105,7 @@ The nodes will appear under **`audio/Supertonic`** in the node menu.
 1. Add **Supertonic Model Loader** (no inputs needed)
 2. Add **Supertonic Text-to-Speech**
 3. Connect the model from step 1
-4. Type your text (include expression tags like `<laugh>` if desired)
+4. Type the text you want spoken
 5. Configure: language, voice, speed, steps
 6. Add **Preview Audio** or **Save Audio** to hear the result
 7. Run the workflow
@@ -128,9 +114,11 @@ The nodes will appear under **`audio/Supertonic`** in the node menu.
 
 Wire the TTS `AUDIO` output into **Supertonic Effects**, then into Preview/Save. Adjust pitch / stretch / chorus as needed.
 
-### Use a custom voice style
+### Set feeling and emotion intensity
 
-Set the optional `custom_style_path` field on the **Supertonic Text-to-Speech** node to an absolute path of a Supertonic voice style `.json` (e.g. generated from [Supertone's Voice Builder](https://supertone-inc.github.io/supertonic-py/)). When set, it overrides the preset `voice_style` dropdown.
+In the customized interface shown above, select `feeling`, then set `emotion_intensity` between `0.0` and `1.0`. The screenshot uses `angry` with intensity `1.0`, voice `F2`, and speed `0.80`. Choose the preset voice using `voice_style`.
+
+Restart the ComfyUI backend after changing custom-node Python code, then refresh the browser and reload a workflow saved for that node schema. ComfyUI saves widget values by position; loading a workflow from a different schema can put `angry` into `language` or shift the numeric fields. Confirm the labels and values before running it.
 
 ### Speed vs Time Stretch
 
@@ -164,3 +152,5 @@ Code: MIT License
 Model: OpenRAIL-M License (Supertone)
 
 Supertonic: Copyright (c) 2026 Supertone Inc.
+
+This fork is maintained at [masterzion/ComfyUI-Supertonic3TTS](https://github.com/masterzion/ComfyUI-Supertonic3TTS), based on [Anonymzx/ComfyUI-Supertonic3TTS](https://github.com/Anonymzx/ComfyUI-Supertonic3TTS).

@@ -2,6 +2,13 @@
 
 All notable changes to ComfyUI-Supertonic3TTS.
 
+## Documentation update — 2026-10-07
+
+- Replaced the README screenshot with the supplied customized ComfyUI workflow image, stored in `docs/images/`.
+- Documented the feeling choices and intensity scale (`0.0`–`1.0`, default `0.5`).
+- Clarified that feeling/intensity fields are metadata and expression tags are not native emotion commands.
+- Added restart and widget-order guidance and updated the installation URL to the masterzion fork.
+
 ## [Unreleased] — 2026-06-30
 
 ### Added

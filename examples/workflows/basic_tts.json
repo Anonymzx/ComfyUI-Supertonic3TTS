@@ -18,10 +18,13 @@
       "properties": {},
       "widgets_values": [
         "Hello! <laugh> This is Supertonic-3 speaking.",
+        "neutral",
         "en",
         1.0,
         8,
-        "M1"
+        "M1",
+        0.5,
+        false
       ]
     },
     {
@@ -61,7 +64,7 @@
   "extra": {
     "workflow_info": {
       "name": "Supertonic Basic TTS",
-      "description": "Minimal Loader → TTS → Effects → SaveAudio pipeline. Edit text or set TTS custom_style_path for a custom voice."
+      "description": "Loader → TTS → Effects → SaveAudio. Select a preset voice. Feeling and emotion_intensity are workflow metadata; Supertonic does not apply emotion conditioning."
     }
   },
   "version": 0.4

@@ -1,0 +1,98 @@
+{
+  "last_node_id": 6,
+  "last_link_id": 6,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "SupertonicLoader",
+      "pos": [80, 300],
+      "size": [240, 80],
+      "properties": {},
+      "widgets_values": []
+    },
+    {
+      "id": 2,
+      "type": "LoadAudio",
+      "pos": [80, 80],
+      "size": [300, 120],
+      "properties": {},
+      "widgets_values": [
+        "reference.wav",
+        null,
+        null
+      ]
+    },
+    {
+      "id": 3,
+      "type": "Supertonic3VoiceClone",
+      "pos": [430, 80],
+      "size": [360, 280],
+      "properties": {},
+      "widgets_values": [
+        "Šis ir precīzs teksts, kas tiek runāts atsauces audio failā.",
+        "lv",
+        40,
+        60,
+        100,
+        0.05,
+        0.05
+      ]
+    },
+    {
+      "id": 4,
+      "type": "SupertonicTTSWithStyle",
+      "pos": [850, 180],
+      "size": [380, 250],
+      "properties": {},
+      "widgets_values": [
+        "Kaut kas nav kārtībā. Mums nekavējoties jādodas prom.",
+        "lv",
+        1.0,
+        8
+      ]
+    },
+    {
+      "id": 5,
+      "type": "SupertonicEffects",
+      "pos": [1290, 180],
+      "size": [280, 200],
+      "properties": {},
+      "widgets_values": [
+        true,
+        true,
+        false,
+        0,
+        1.0,
+        false
+      ]
+    },
+    {
+      "id": 6,
+      "type": "SaveAudio",
+      "pos": [1630, 180],
+      "size": [240, 80],
+      "properties": {},
+      "widgets_values": [
+        "supertonic-latvian-cloned",
+        "wav"
+      ]
+    }
+  ],
+  "links": [
+    [1, 1, 0, 3, 0, "SUPERTONIC_MODEL"],
+    [2, 2, 0, 3, 1, "AUDIO"],
+    [3, 3, 0, 4, 0, "SUPERTONIC_MODEL"],
+    [4, 3, 1, 4, 1, "SUPERTONIC_STYLE"],
+    [5, 4, 0, 5, 0, "AUDIO"],
+    [6, 5, 0, 6, 0, "AUDIO"]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "workflow_info": {
+      "name": "Supertonic 3 Latvian Reference Voice",
+      "description": "Reference audio + transcript -> Supertonic 3 voice clone -> Latvian TTS"
+    }
+  },
+  "version": 0.4
+}

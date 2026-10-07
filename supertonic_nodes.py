@@ -178,6 +178,8 @@ EXPRESSION_TAGS = [
     "<throatclear>", "<sad>", "<angry>", "<cough>", "<yawn>",
 ]
 
+FEELINGS = ["neutral", "happy", "sad", "angry", "surprised", "fearful", "disgusted"]
+
 
 def numpy_to_comfy_audio(wav: np.ndarray, sr: int) -> dict:
     """Convert mono waveform to ComfyUI AUDIO spec.
@@ -314,7 +316,11 @@ class SupertonicTTS:
                 "text": ("STRING", {
                     "default": "Hello! <laugh> This is Supertonic-3 speaking.",
                     "multiline": True,
-                    "placeholder": "Enter text with optional expression tags...\nTags: <laugh> <breath> <surprise> <sigh> <scream> <throatclear> <sad> <angry> <cough> <yawn>\nExample: Hello! <laugh> That was funny!",
+                    "placeholder": "Enter text. Select the feeling separately below.\nLegacy tags such as <angry> are not emotion controls in the installed SDK.",
+                }),
+                "feeling": (FEELINGS, {
+                    "default": "neutral",
+                    "tooltip": "Requested feeling. The installed Supertonic SDK currently has no emotion-conditioning API; retained as workflow/job metadata.",
                 }),
                 "language": (SUPPORTED_LANGUAGES, {"default": "en"}),
                 "speed": ("FLOAT", {"default": 1.0, "min": 0.5, "max": 2.0, "step": 0.05, "display": "slider"}),
@@ -339,6 +345,7 @@ class SupertonicTTS:
         self,
         model: dict,
         text: str,
+        feeling: str = "neutral",
         language: str = "en",
         speed: float = 1.0,
         steps: int = 8,
@@ -354,6 +361,9 @@ class SupertonicTTS:
         tts_obj = model["tts"]
         sr = tts_obj.sample_rate
 
+        if feeling not in FEELINGS:
+            raise ValueError(f"Unsupported feeling '{feeling}'. Choose one of: {', '.join(FEELINGS)}")
+
         found_tags = [tag for tag in EXPRESSION_TAGS if tag in text]
 
         style_path = Path(custom_style_path) if custom_style_path else None
@@ -368,6 +378,7 @@ class SupertonicTTS:
         if verbose:
             print(f"\n=== SupertonicTTS ===")
             print(f"  Language: {language} | Speed: {speed} | Steps: {steps} | Voice: {voice_style}")
+            print(f"  Feeling requested: {feeling} (SDK emotion conditioning unavailable)")
             if found_tags:
                 print(f"  Expression tags detected: {', '.join(found_tags)}")
             print(f"  Text: {text[:120]}")
